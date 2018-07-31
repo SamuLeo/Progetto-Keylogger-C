@@ -9,94 +9,121 @@
 
 #include <linux/input.h>    /* EVIOCGVERSION ++ */
 
+#define VETT_CONVERSIONE_SIZE 51
 #define BUFFER_SIZE 16
+
 #define NESSUN_ERRORE 0
 #define ERRORE_ARGOMENTI 1
 
-int main(int argc, char *argv[])
-{
-    int file_descriptor, n_bytes_letti;
-    unsigned i;
+void inizializza ();
+char codeToLetter (int code);
 
-    /* A few examples of information to gather */
-    unsigned version;
-    unsigned short id[4];                   /* or use struct input_id */
-    char name[256] = "N/A";
+char vettore_conversione_simboli [VETT_CONVERSIONE_SIZE] = {'\0'};
 
-    struct input_event buffer[BUFFER_SIZE]; /* Read up to N events ata time */
+int main (int argc, char *argv[]) {
+	int file_descriptor, n_bytes_letti;
+	unsigned i;
+	struct input_event buffer [BUFFER_SIZE];
 
-    if (argc < 2) {
-        printf(
-            "Usage: %s /dev/input/eventN\n"
-            "Where X = input device number\n",
-            argv[0]
-        );
-        return ERRORE_ARGOMENTI;
-    }
+	inizializza ();
 
-    if ((file_descriptor = open(argv[1], O_RDONLY)) < 0) {
-        printf(
-            "Error: unable to open `%s'\n",
-            argv[1]
-        );
-    }
-    /* Error check here as well. */
-    ioctl (file_descriptor, EVIOCGVERSION, &version);
-    ioctl (file_descriptor, EVIOCGID, id); 
-    ioctl (file_descriptor, EVIOCGNAME(sizeof(name)), name);
+	if (argc < 2) {
+		printf(
+			"Usage: %s /dev/input/eventN\n"
+			"Where X = input device number\n",
+			argv[0]
+		);
+		return ERRORE_ARGOMENTI;
+	}
 
-    printf (
-        "Name      : %s\n"
-        "Version   : %d.%d.%d\n"
-        "ID        : Bus=%04x Vendor=%04x Product=%04x Version=%04x\n"
-        "----------\n"
-        ,
-        name,
+	if ((file_descriptor = open(argv[1], O_RDONLY)) < 0) {
+		printf(
+			"Error: unable to open `%s'\n",
+			argv[1]
+		);
+	}
 
-        version >> 16,
-        (version >> 8) & 0xff,
-        version & 0xff,
+	/* Loop. Read event file and parse result. */
+	for (;;) {
+		n_bytes_letti = read (file_descriptor, buffer, sizeof(struct input_event) * BUFFER_SIZE);
 
-        id[ID_BUS],
-        id[ID_VENDOR],
-        id[ID_PRODUCT],
-        id[ID_VERSION]
-    );
+		if (n_bytes_letti < (int) sizeof(struct input_event)) {
+			printf (
+				"ERR %d:\n"
+				"Reading of `%s' failed\n"
+				"%s\n",
+				errno, argv[1], strerror (errno)
+			);
+			break;
+		}
 
-    /* Loop. Read event file and parse result. */
-    for (;;) {
-        n_bytes_letti = read (file_descriptor, buffer, sizeof(struct input_event) * BUFFER_SIZE);
+		/* Implement code to translate type, code and value */
+		for (i = 0; i < n_bytes_letti / sizeof(struct input_event); ++i) {
+			if (buffer[i].type == EV_KEY && buffer[i].value == 1) {
+				printf (
+					"%ld.%06ld: "
+					"code=%02x "
+					"lettera=%c\n",
+					buffer[i].time.tv_sec,
+					buffer[i].time.tv_usec,
+					buffer[i].code,
+					codeToLetter (buffer[i].code)
+				);
+			}
+		}
+	}
 
-        if (n_bytes_letti < (int) sizeof(struct input_event)) {
-            fprintf(stderr,
-                "ERR %d:\n"
-                "Reading of `%s' failed\n"
-                "%s\n",
-                errno, argv[1], strerror(errno)
-            );
-            break;
-        }
+	close (file_descriptor);
 
-        /* Implement code to translate type, code and value */
-        for (i = 0; i < n_bytes_letti / sizeof(struct input_event); ++i) {
-	    if (buffer[i].type == EV_KEY && buffer[i].value == 1) {
-		    printf (
-		        "%ld.%06ld: "
-		        "type=%02x "
-		        "code=%02x "
-		        "value=%02x\n",
-		        buffer[i].time.tv_sec,
-		        buffer[i].time.tv_usec,
-		        buffer[i].type,
-		        buffer[i].code,
-		        buffer[i].value
-		    );
-	    }
-        }
-    }
-
-    close (file_descriptor);
-
-    return NESSUN_ERRORE;
+	return NESSUN_ERRORE;
 }
 
+void inizializza () {
+	vettore_conversione_simboli [2] = '1';
+	vettore_conversione_simboli [3] = '2';
+	vettore_conversione_simboli [4] = '3';
+	vettore_conversione_simboli [5] = '4';
+	vettore_conversione_simboli [6] = '5';
+	vettore_conversione_simboli [7] = '6';
+	vettore_conversione_simboli [8] = '7';
+	vettore_conversione_simboli [9] = '8';
+	vettore_conversione_simboli [10] = '9';
+	vettore_conversione_simboli [11] = '0';
+	vettore_conversione_simboli [12] = '-';
+	vettore_conversione_simboli [13] = '=';
+	vettore_conversione_simboli [15] = '\t';
+	vettore_conversione_simboli [16] = 'q';
+	vettore_conversione_simboli [17] = 'w';
+	vettore_conversione_simboli [18] = 'e';
+	vettore_conversione_simboli [19] = 'r';
+	vettore_conversione_simboli [20] = 't';
+	vettore_conversione_simboli [21] = 'y';
+	vettore_conversione_simboli [22] = 'u';
+	vettore_conversione_simboli [23] = 'i';
+	vettore_conversione_simboli [24] = 'o';
+	vettore_conversione_simboli [25] = 'p';
+	vettore_conversione_simboli [28] = '\n';
+	vettore_conversione_simboli [30] = 'a';
+	vettore_conversione_simboli [31] = 's';
+	vettore_conversione_simboli [32] = 'd';
+	vettore_conversione_simboli [33] = 'f';
+	vettore_conversione_simboli [34] = 'g';
+	vettore_conversione_simboli [35] = 'h';
+	vettore_conversione_simboli [36] = 'j';
+	vettore_conversione_simboli [37] = 'k';
+	vettore_conversione_simboli [38] = 'l';
+	vettore_conversione_simboli [44] = 'z';
+	vettore_conversione_simboli [45] = 'x';
+	vettore_conversione_simboli [46] = 'c';
+	vettore_conversione_simboli [47] = 'v';
+	vettore_conversione_simboli [48] = 'b';
+	vettore_conversione_simboli [49] = 'n';
+	vettore_conversione_simboli [50] = 'm';
+}
+
+char codeToLetter (int code) {
+	if (code >= 0 && code < VETT_CONVERSIONE_SIZE)
+		return vettore_conversione_simboli [code];
+	else
+		return '\0';
+}
