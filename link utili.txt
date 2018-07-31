@@ -1,3 +1,6 @@
 Leggere tasti:
 https://unix.stackexchange.com/questions/94322/is-it-possible-for-a-daemon-i-e-background-process-to-look-for-key-presses-fr
 
+Costanti tastiera:
+https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h
+https://www.kernel.org/doc/html/latest/input/event-codes.html#input-event-codes
