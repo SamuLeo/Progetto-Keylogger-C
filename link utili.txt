@@ -1,2 +1,3 @@
 Leggere tasti:
 https://unix.stackexchange.com/questions/94322/is-it-possible-for-a-daemon-i-e-background-process-to-look-for-key-presses-fr
+
