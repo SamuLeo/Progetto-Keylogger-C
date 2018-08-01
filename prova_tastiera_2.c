@@ -14,9 +14,11 @@
 
 #define NESSUN_ERRORE 0
 #define ERRORE_ARGOMENTI 1
+#define ERRORE_MEMORIA 2
 #define MAX_LUNGHEZZA_PAROLA 50
 
-typedef struct nodo_parola {
+typedef struct nodo_parola
+{
 	char *parola;
 	unsigned int conteggio;
 	struct nodo_parola *successiva;
@@ -30,9 +32,10 @@ bool isAlfanumerica (char c);
 int totCaratteri(int vettore_conteggio_simboli[]);
 void inserisciParola(nodo_parola *testa_lista, char buffer_parola[]);
 nodo_parola *creaNodoParola (char *buffer_parola);
+void* malloc_con_controllo (unsigned int size);
 
 int main (int argc, char *argv[]) {
-	int file_descriptor, n_bytes_letti;
+	int file_descriptor, fd_fileStat, n_bytes_letti;
 	unsigned i;
 	struct input_event buffer [BUFFER_SIZE];
 
@@ -42,7 +45,9 @@ int main (int argc, char *argv[]) {
 	char buffer_parola [MAX_LUNGHEZZA_PAROLA];
 	unsigned short iBufferParola = 0;
 
-	nodo_parola *parola_iniziale = NULL;
+	nodo_parola *testa_lista = NULL;
+
+	bool continua = true;
 
 	inizializza (vettore_conversione_simboli);
 
@@ -63,7 +68,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	/* Loop. Read event file and parse result. */
-	for (;;) {
+	while (continua) {
 		n_bytes_letti = read (file_descriptor, buffer, sizeof(struct input_event) * BUFFER_SIZE);
 
 		if (n_bytes_letti < (int) sizeof(struct input_event)) {
@@ -89,8 +94,10 @@ int main (int argc, char *argv[]) {
 					buffer[i].code,
 					carattere
 				);
+				// conteggio lettere
 				contaSimbolo (buffer[i].code, vettore_conteggio_simboli);
 
+				// conteggio parole
 				if (isAlfanumerica (carattere))
 				{
 					buffer_parola[iBufferParola]=carattere;
@@ -100,8 +107,14 @@ int main (int argc, char *argv[]) {
 				{
 					buffer_parola[iBufferParola]='\0';
 
+					if (strcmp (buffer_parola, "quit") == 0) {
+						riepilogo (); //TODO
+						continua = false;
+						break;
+					}
 
-
+					inserisciParola (testa_lista, buffer_parola);
+					iBufferParola = 0;
 				}
 			}
 		}
@@ -156,7 +169,8 @@ void inizializza (char vettore_conversione_simboli[]) {
 }
 
 char codeToLetter (int code, char vettore_conversione_simboli[]) {
-	//for (int i = 0; i < )
+	/*for (int i = 0; i < 50; i++)
+		printf ("code=%d lettera=%c\n", i, vettore_conversione_simboli[i]);*/
 	if (code >= 0 && code < VETT_CONVERSIONE_SIZE)
 		return vettore_conversione_simboli [code];
 	else
@@ -208,9 +222,24 @@ void inserisciParola (nodo_parola *testa_lista, char buffer_parola[]){
 
 nodo_parola *creaNodoParola (char *buffer_parola) {
 	int lunghezza_parola = strlen (buffer_parola) + 1;
-	nodo_parola* nodo = malloc (sizeof (nodo_parola));
-	nodo->parola = malloc (lunghezza_parola);
+	nodo_parola* nodo = (nodo_parola*)malloc_con_controllo (sizeof (nodo_parola));
+	nodo->parola = (char*)malloc_con_controllo (lunghezza_parola);
 	strcpy (nodo->parola, buffer_parola);
 	nodo->conteggio = 1;
 	nodo->successiva = NULL;
+	return nodo;
 }
+
+void* malloc_con_controllo (unsigned int size)
+{
+	void *ptr;
+	ptr = malloc(size);
+	if(ptr == NULL)
+	{
+		fprintf(stderr, "Errore : memoria heap non allocata");
+		exit(ERRORE_MEMORIA);
+	}
+	return ptr;
+}
+
+void riepilogo ()

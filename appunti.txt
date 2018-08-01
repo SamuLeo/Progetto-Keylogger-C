@@ -17,7 +17,7 @@
 
 - elaborazione statistiche
 	v contare lettere
-	- contare parole
+	v contare parole
 	v contare tasti totali
 	- contare battiti al secondo
 	- tempo
