@@ -24,6 +24,7 @@ int main (int argc, char *argv[]) {
 	int file_descriptor, n_bytes_letti;
 	unsigned i;
 	struct input_event buffer [BUFFER_SIZE];
+	int vettore_conteggio_simboli[VETT_CONVERSIONE_SIZE]={0};
 
 	inizializza ();
 
@@ -69,6 +70,7 @@ int main (int argc, char *argv[]) {
 					buffer[i].code,
 					codeToLetter (buffer[i].code)
 				);
+				vettore_conteggio_simboli[buffer[i].code]++;
 			}
 		}
 	}
