@@ -16,11 +16,25 @@
 
 
 - elaborazione statistiche
-	- contare lettere
+	v contare lettere
 	- contare parole
-	- contare tasti totali
+	v contare tasti totali
 	- contare battiti al secondo
 	- tempo
 - trovare device di input in automatico
 - salvataggio statistiche su file
 - background / daemon
+
+
+Crea un programma che lancia in background un thread in cui legge tutto ciò che batti nella
+tastiera. Questo programma pubblica delle statistiche riguardo il tuo battito di tastiera nel file
+“/proc/keyboard/local/statistics”. Questo percorso è un percorso del tutto fittizio in linux!
+Le statistiche da considerare sono:
+1) Numero di caratteri battuti;
+2) Battiti al secondo (il timer della statistica viene lanciata al primo tasto premuto e termina
+automaticamente se non vengono battuti più tasti per 3 secondi);
+3) Tasto più premuto;
+4) Parola più battuta (una parola, per definizione, è quella stringa di caratteri 0-9,A-Z,a-z
+compresi tra 2 caratteri non appartenenti ad una parola; per esempio in
+“...ciao....mondo!!!” “ciao” e “mondo” sono 2 parola);
+5) Tempo analizzato;

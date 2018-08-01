@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     }
     /* Error check here as well. */
     ioctl(fd, EVIOCGVERSION, &version);
-    ioctl(fd, EVIOCGID, id); 
+    ioctl(fd, EVIOCGID, id);
     ioctl(fd, EVIOCGNAME(sizeof(name)), name);
 
     fprintf(stderr,
@@ -98,4 +98,3 @@ fine:
 
     return errno;
 }
-

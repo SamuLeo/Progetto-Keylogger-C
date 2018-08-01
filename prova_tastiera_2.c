@@ -1,8 +1,8 @@
 #include <stdio.h>
-
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>     /* strerror() */
 #include <errno.h>      /* errno */
-
 #include <fcntl.h>      /* open() */
 #include <unistd.h>     /* close() */
 #include <sys/ioctl.h>  /* ioctl() */
@@ -14,19 +14,36 @@
 
 #define NESSUN_ERRORE 0
 #define ERRORE_ARGOMENTI 1
+#define MAX_LUNGHEZZA_PAROLA 50
 
-void inizializza ();
-char codeToLetter (int code);
+typedef struct {
+	char *parola;
+	unsigned int conteggio;
+	struct struttura_parola *successiva;
+}nodo_parola;
 
-char vettore_conversione_simboli [VETT_CONVERSIONE_SIZE] = {'\0'};
+void inizializza (char vettore_conversione_simboli[]);
+char codeToLetter (int code, char vettore_conversione_simboli[]);
+void contaSimbolo (int code, int vettore_conteggio_simboli[]);
+char simboloPiuFrequente (int vettore_conteggio_simboli[], char vettore_conversione_simboli[]);
+bool isAlfanumerica (char c);
+int totCaratteri(int vettore_conteggio_simboli[]);
+void inserisciParola(char **matrice_parole, int *vettore_conteggio_parole, char buffer_parola[], int numero_massimo_parole, int *indice_ultima_parola);
 
 int main (int argc, char *argv[]) {
 	int file_descriptor, n_bytes_letti;
 	unsigned i;
 	struct input_event buffer [BUFFER_SIZE];
-	int vettore_conteggio_simboli[VETT_CONVERSIONE_SIZE]={0};
 
-	inizializza ();
+	char vettore_conversione_simboli [VETT_CONVERSIONE_SIZE] = {'\0'};
+	int vettore_conteggio_simboli [VETT_CONVERSIONE_SIZE] = {0};
+
+	char buffer_parola [MAX_LUNGHEZZA_PAROLA];
+	unsigned short iBufferParola = 0;
+
+	nodo_parola *parola_iniziale = NULL;
+
+	inizializza (vettore_conversione_simboli);
 
 	if (argc < 2) {
 		printf(
@@ -61,6 +78,7 @@ int main (int argc, char *argv[]) {
 		/* Implement code to translate type, code and value */
 		for (i = 0; i < n_bytes_letti / sizeof(struct input_event); ++i) {
 			if (buffer[i].type == EV_KEY && buffer[i].value == 1) {
+				char carattere = codeToLetter (buffer[i].code, vettore_conversione_simboli);
 				printf (
 					"%ld.%06ld: "
 					"code=%02x "
@@ -68,9 +86,22 @@ int main (int argc, char *argv[]) {
 					buffer[i].time.tv_sec,
 					buffer[i].time.tv_usec,
 					buffer[i].code,
-					codeToLetter (buffer[i].code)
+					carattere
 				);
-				vettore_conteggio_simboli[buffer[i].code]++;
+				contaSimbolo (buffer[i].code, vettore_conteggio_simboli);
+
+				if (isAlfanumerica (carattere))
+				{
+					buffer_parola[iBufferParola]=carattere;
+					iBufferParola++;
+				}
+				else
+				{
+					buffer_parola[iBufferParola]='/0';
+
+
+
+				}
 			}
 		}
 	}
@@ -80,7 +111,7 @@ int main (int argc, char *argv[]) {
 	return NESSUN_ERRORE;
 }
 
-void inizializza () {
+void inizializza (char vettore_conversione_simboli[]) {
 	vettore_conversione_simboli [2] = '1';
 	vettore_conversione_simboli [3] = '2';
 	vettore_conversione_simboli [4] = '3';
@@ -123,9 +154,61 @@ void inizializza () {
 	vettore_conversione_simboli [50] = 'm';
 }
 
-char codeToLetter (int code) {
+char codeToLetter (int code, char vettore_conversione_simboli[]) {
 	if (code >= 0 && code < VETT_CONVERSIONE_SIZE)
 		return vettore_conversione_simboli [code];
 	else
 		return '\0';
+}
+
+void contaSimbolo (int code, int vettore_conteggio_simboli[]) {
+	if (code >= 0 && code < VETT_CONVERSIONE_SIZE)
+		vettore_conteggio_simboli [code] ++;
+}
+
+char simboloPiuFrequente (int vettore_conteggio_simboli[], char vettore_conversione_simboli[]) {
+	char simboloPiuFrequente = vettore_conversione_simboli [0];
+	int frequenzaMax = vettore_conteggio_simboli [0];
+	for (int i = 1; i < VETT_CONVERSIONE_SIZE; i++) {
+		if (vettore_conteggio_simboli [i] > frequenzaMax) {
+			frequenzaMax = vettore_conteggio_simboli [i];
+			simboloPiuFrequente = vettore_conversione_simboli [i];
+		}
+	}
+	return simboloPiuFrequente;
+}
+
+bool isAlfanumerica (char c) {
+	return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z');
+}
+
+int totCaratteri (int vettore_conteggio_simboli[]){
+	int somma = 0;
+	for (int i = 0; i < VETT_CONVERSIONE_SIZE; i++) {
+		somma += vettore_conteggio_simboli[i];
+	}
+	return somma;
+}
+
+void inserisciParola (nodo_parola *testa_lista, char buffer_parola[]){
+	int lunghezza_parola = 0;
+	if (testa_lista == NULL) {
+
+	}
+	nodo_parola temp = testa_lista;
+	while() {
+		if (strcmp (matrice_parole[i], buffer_parola) == 0) {
+			vettore_conteggio_parole [i]++;
+			return;
+		}
+	}
+	lunghezza_parola = strlen(buffer_parola);
+	char* vettore_temporaneo = malloc(strlen(buffer_parola));
+	strcpy(vettore_temporaneo,buffer_parola)
+	matrice_parole[iMatriceParole][]=vettore_temporaneo;
+	iMatriceParole++;
+
+	// strcmp (str1, str2) == 0
+	// strlen (stringa)
+	// strcpy (destinazione, origine);
 }
