@@ -16,10 +16,10 @@
 #define ERRORE_ARGOMENTI 1
 #define MAX_LUNGHEZZA_PAROLA 50
 
-typedef struct {
+typedef struct nodo_parola {
 	char *parola;
 	unsigned int conteggio;
-	struct struttura_parola *successiva;
+	struct nodo_parola *successiva;
 }nodo_parola;
 
 void inizializza (char vettore_conversione_simboli[]);
@@ -28,7 +28,8 @@ void contaSimbolo (int code, int vettore_conteggio_simboli[]);
 char simboloPiuFrequente (int vettore_conteggio_simboli[], char vettore_conversione_simboli[]);
 bool isAlfanumerica (char c);
 int totCaratteri(int vettore_conteggio_simboli[]);
-void inserisciParola(char **matrice_parole, int *vettore_conteggio_parole, char buffer_parola[], int numero_massimo_parole, int *indice_ultima_parola);
+void inserisciParola(nodo_parola *testa_lista, char buffer_parola[]);
+nodo_parola *creaNodoParola (char *buffer_parola);
 
 int main (int argc, char *argv[]) {
 	int file_descriptor, n_bytes_letti;
@@ -97,7 +98,7 @@ int main (int argc, char *argv[]) {
 				}
 				else
 				{
-					buffer_parola[iBufferParola]='/0';
+					buffer_parola[iBufferParola]='\0';
 
 
 
@@ -155,6 +156,7 @@ void inizializza (char vettore_conversione_simboli[]) {
 }
 
 char codeToLetter (int code, char vettore_conversione_simboli[]) {
+	//for (int i = 0; i < )
 	if (code >= 0 && code < VETT_CONVERSIONE_SIZE)
 		return vettore_conversione_simboli [code];
 	else
@@ -191,24 +193,24 @@ int totCaratteri (int vettore_conteggio_simboli[]){
 }
 
 void inserisciParola (nodo_parola *testa_lista, char buffer_parola[]){
-	int lunghezza_parola = 0;
 	if (testa_lista == NULL) {
-
+		testa_lista = creaNodoParola (buffer_parola);
 	}
-	nodo_parola temp = testa_lista;
-	while() {
-		if (strcmp (matrice_parole[i], buffer_parola) == 0) {
-			vettore_conteggio_parole [i]++;
+	nodo_parola temp = *testa_lista;
+	while(temp.successiva != NULL) {
+		if (strcmp (temp.parola, buffer_parola) == 0) {
+			temp.conteggio++;
 			return;
 		}
 	}
-	lunghezza_parola = strlen(buffer_parola);
-	char* vettore_temporaneo = malloc(strlen(buffer_parola));
-	strcpy(vettore_temporaneo,buffer_parola)
-	matrice_parole[iMatriceParole][]=vettore_temporaneo;
-	iMatriceParole++;
+	temp.successiva = creaNodoParola (buffer_parola);
+}
 
-	// strcmp (str1, str2) == 0
-	// strlen (stringa)
-	// strcpy (destinazione, origine);
+nodo_parola *creaNodoParola (char *buffer_parola) {
+	int lunghezza_parola = strlen (buffer_parola) + 1;
+	nodo_parola* nodo = malloc (sizeof (nodo_parola));
+	nodo->parola = malloc (lunghezza_parola);
+	strcpy (nodo->parola, buffer_parola);
+	nodo->conteggio = 1;
+	nodo->successiva = NULL;
 }
