@@ -19,8 +19,8 @@
 	v contare lettere
 	v contare parole
 	v contare tasti totali
-	- contare battiti al secondo
-	- tempo
+	v contare battiti al secondo
+	v tempo
 - trovare device di input in automatico
 - salvataggio statistiche su file
 - background / daemon
