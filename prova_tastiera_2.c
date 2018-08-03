@@ -43,7 +43,7 @@ void inizializza (cella_simbolo vettore_simboli[]);
 char* codeToLetter (int code, cella_simbolo vettore_simboli[]);
 bool contaSimbolo (int code, cella_simbolo vettore_simboli[], time_t *tempo_ultima_pressione,
 										int *numero_tasti_premuti, int *numero_tasti_premuti_prec, time_t *tempo_inizio_sessione,
-										time_t *tempo_sessione, FILE *file_log);
+										time_t *tempo_sessione, FILE* file_log);
 char* simboloPiuFrequente (cella_simbolo vettore_simboli[]);
 bool isAlfanumerico (char* s);
 int totCaratteri (cella_simbolo vettore_simboli[]);
@@ -51,11 +51,11 @@ void inserisciParola (nodo_parola **testa_lista, char buffer_parola[]);
 nodo_parola *creaNodoParola (char *buffer_parola);
 void* malloc_con_controllo (unsigned int size);
 void scriviLog (FILE *file_log, time_t tempo_iniziale, cella_simbolo vettore_simboli[],
-								nodo_parola *testa_lista, int numero_tasti_premuti_prec, time_t tempo_sessione);
+								nodo_parola **testa_lista, int numero_tasti_premuti_prec, time_t tempo_sessione);
 long caratteriTotali (cella_simbolo vettore_simboli[]);
 char* tastoPiuPremuto (cella_simbolo vettore_simboli[]);
 char* parolaPiuDigitata (nodo_parola *testa_lista);
-void freeLista (nodo_parola** testa_lista);
+void resetStrutture (nodo_parola** testa_lista, cella_simbolo vettore_simboli[]);
 
 int main (int argc, char *argv[])
 {
@@ -147,15 +147,14 @@ int main (int argc, char *argv[])
 				);
 				// conteggio lettere
 				int code = buffer[i].code;
-				bool scrivi_log = contaSimbolo (buffer[i].code, vettore_simboli, &tempo_ultima_pressione, &numero_tasti_premuti,
-											&numero_tasti_premuti_prec, &tempo_inizio_sessione, &tempo_sessione,file_log);
+				bool sessione_finita = contaSimbolo (buffer[i].code, vettore_simboli, &tempo_ultima_pressione, &numero_tasti_premuti,
+											&numero_tasti_premuti_prec, &tempo_inizio_sessione, &tempo_sessione, file_log);
 				// nel caso sia finita la sessione, scrivi il riepilogo nel file di output
-				if (scrivi_log)
+				if (sessione_finita)
 					{
-						scriviLog (file_log, tempo_iniziale, vettore_simboli, testa_lista, numero_tasti_premuti_prec, tempo_sessione);
+						scriviLog (file_log, tempo_iniziale, vettore_simboli, &testa_lista, numero_tasti_premuti_prec, tempo_sessione);
 						contaSimbolo (code, vettore_simboli, &tempo_ultima_pressione, &numero_tasti_premuti,
-													&numero_tasti_premuti_prec, &tempo_inizio_sessione, &tempo_sessione,file_log);
-
+													&numero_tasti_premuti_prec, &tempo_inizio_sessione, &tempo_sessione, file_log);
 					}
 				// conteggio parole
 				if (isAlfanumerico (simbolo))
@@ -169,8 +168,7 @@ int main (int argc, char *argv[])
 					// metodo di uscita a scopo di test: se viene inserita la parola quit, esce
 					if (strcmp (buffer_parola, "quit") == 0)
 					{
-						scriviLog (file_log, tempo_iniziale, vettore_simboli, testa_lista, numero_tasti_premuti, tempo_sessione);
-						freeLista (&testa_lista);
+						scriviLog (file_log, tempo_iniziale, vettore_simboli, &testa_lista, numero_tasti_premuti, tempo_sessione);
 						continua = false;
 						break;
 					}
@@ -202,7 +200,7 @@ char* codeToLetter (int code, cella_simbolo vettore_simboli[]) {
 //use your imagination
 bool contaSimbolo (int code, cella_simbolo vettore_simboli[], time_t *tempo_ultima_pressione,
 										int *numero_tasti_premuti, int *numero_tasti_premuti_prec, time_t *tempo_inizio_sessione,
-										time_t *tempo_sessione, FILE *file_log)
+										time_t *tempo_sessione, FILE* file_log)
 {
 	time_t tempo_attuale = time (NULL);
 	time_t secondi_da_ultima_pressione;
@@ -278,14 +276,16 @@ void inserisciParola (nodo_parola **testa_lista, char buffer_parola[]){
 		return;
 	}
 	nodo_parola* temp = *testa_lista;
-	while(temp->successiva != NULL) {
+	nodo_parola* prec_temp = temp;
+	while (temp != NULL) {// non legge l'ultimo
 		if (strcmp (temp->parola, buffer_parola) == 0) {
 			temp->conteggio++;
 			return;
 		}
+		prec_temp = temp;
 		temp = temp->successiva;
 	}
-	temp->successiva = creaNodoParola (buffer_parola);
+	prec_temp->successiva = creaNodoParola (buffer_parola);
 }
 
 //Crea un elemento di tipo nodo_parola
@@ -315,7 +315,7 @@ void* malloc_con_controllo (unsigned int size)
 
 // salva sul file di log le statistiche dell'ultima sessione
 void scriviLog (FILE* file_log, time_t tempo_iniziale, cella_simbolo vettore_simboli[],
-								nodo_parola *testa_lista, int numero_tasti_premuti_prec, time_t tempo_sessione) {
+								nodo_parola **testa_lista, int numero_tasti_premuti_prec, time_t tempo_sessione) {
 	time_t tempo_totale = difftime (time (NULL), tempo_iniziale);
 	fprintf (file_log, "\n============================== DATI ==============================\n\n");
 	fprintf (file_log, "Tempo dall'inizio del programma (secondi): %ld\n", tempo_totale);
@@ -324,11 +324,11 @@ void scriviLog (FILE* file_log, time_t tempo_iniziale, cella_simbolo vettore_sim
 	fprintf (file_log, "Numero di digitazione medie al secondo: %.2lf\n", digitazioni_medie);
   fprintf (file_log, "Numero dei caratteri totali digitati: %d\n", numero_tasti_premuti_prec);
 	fprintf (file_log, "Tasto maggiormente premuto: %s\n", tastoPiuPremuto (vettore_simboli) );
-	fprintf (file_log, "Parola maggiormente digitata: %s\n", parolaPiuDigitata (testa_lista));
+	fprintf (file_log, "Parola maggiormente digitata: %s\n", parolaPiuDigitata (*testa_lista));
 	fprintf (file_log, "\n============================== FINE ==============================\n");
 	fflush (file_log);
 	// infine libera la memoria allocata dalla lista, per prepararla alla prossima sessione
-	freeLista (&testa_lista);
+	resetStrutture (testa_lista, vettore_simboli);
 }
 
 //scorre tutti i caratteri digitati ritornando il simbolo piu' premuto dopo
@@ -366,7 +366,7 @@ char* parolaPiuDigitata (nodo_parola *testa_lista) {
 }
 
 // libera la memoria allocata per la lista di parole
-void freeLista (nodo_parola** testa_lista)
+void resetStrutture (nodo_parola** testa_lista, cella_simbolo vettore_simboli[])
 {
 	if (*testa_lista == NULL)
 		return;
@@ -381,6 +381,9 @@ void freeLista (nodo_parola** testa_lista)
 		x = y;
 	}
 	*testa_lista = NULL;
+
+	for (int i = 0; i < VETT_SIMBOLI_SIZE; i++)
+		vettore_simboli [i].conteggio = 0;
 }
 // Mappa la codifica hardware della tastiera (per il kernel linux) in stringhe leggibili
 void inizializza (cella_simbolo vettore_simboli[]) {
