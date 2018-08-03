@@ -47,7 +47,7 @@ bool contaSimbolo (int code, cella_simbolo vettore_simboli[], time_t *tempo_ulti
 char* simboloPiuFrequente (cella_simbolo vettore_simboli[]);
 bool isAlfanumerico (char* s);
 int totCaratteri (cella_simbolo vettore_simboli[]);
-void inserisciParola (nodo_parola *testa_lista, char buffer_parola[]);
+void inserisciParola (nodo_parola **testa_lista, char buffer_parola[]);
 nodo_parola *creaNodoParola (char *buffer_parola);
 void* malloc_con_controllo (unsigned int size);
 void scriviLog (FILE *file_log, time_t tempo_iniziale, cella_simbolo vettore_simboli[],
@@ -55,7 +55,7 @@ void scriviLog (FILE *file_log, time_t tempo_iniziale, cella_simbolo vettore_sim
 long caratteriTotali (cella_simbolo vettore_simboli[]);
 char* tastoPiuPremuto (cella_simbolo vettore_simboli[]);
 char* parolaPiuDigitata (nodo_parola *testa_lista);
-void freeLista (nodo_parola* testa_lista);
+void freeLista (nodo_parola** testa_lista);
 
 int main (int argc, char *argv[])
 {
@@ -170,12 +170,12 @@ int main (int argc, char *argv[])
 					if (strcmp (buffer_parola, "quit") == 0)
 					{
 						scriviLog (file_log, tempo_iniziale, vettore_simboli, testa_lista, numero_tasti_premuti, tempo_sessione);
-						freeLista(testa_lista);
+						freeLista (&testa_lista);
 						continua = false;
 						break;
 					}
 					// inserisce la parola appena terminata nella lista delle parole
-					inserisciParola (testa_lista, buffer_parola);
+					inserisciParola (&testa_lista, buffer_parola);
 					iBufferParola = 0;
 				}
 			}
@@ -199,21 +199,16 @@ char* codeToLetter (int code, cella_simbolo vettore_simboli[]) {
 		return "\0";
 }
 
-//incrementa il contatore associato ai vari simboli nel vettore di cella_simbolo(vettore_simboli) se il codice è valido
+//use your imagination
 bool contaSimbolo (int code, cella_simbolo vettore_simboli[], time_t *tempo_ultima_pressione,
 										int *numero_tasti_premuti, int *numero_tasti_premuti_prec, time_t *tempo_inizio_sessione,
 										time_t *tempo_sessione, FILE *file_log)
 {
-
-
-
-	//controllo validità simbolo più incremento
-
-
 	time_t tempo_attuale = time (NULL);
 	time_t secondi_da_ultima_pressione;
 
-	//se non si premono simboli per un tempo pari a GAP_MAX inizia una nuova sessione
+	// il primo simbolo digitato inizializza il tempo_inizo_sessione sostituendo l'inizializzazione
+	// iniziale a 0 con il tempo attuale
 	if (*tempo_inizio_sessione == 0) {
 		secondi_da_ultima_pressione = 0;
 		*tempo_inizio_sessione = tempo_attuale;
@@ -225,24 +220,25 @@ bool contaSimbolo (int code, cella_simbolo vettore_simboli[], time_t *tempo_ulti
 
 	*tempo_ultima_pressione = tempo_attuale;
 
+	//se non si premono simboli per un tempo pari a GAP_MAX inizia una nuova sessione
 	if (secondi_da_ultima_pressione < GAP_MAX)
-	{
+	{ // rimane nella sessione
 		(*numero_tasti_premuti) ++;
 		// scrive sul file di output il tasto letto
 		fprintf (file_log, codeToLetter (code, vettore_simboli));
+		//controllo validità simbolo più incremento
 		if (code >= 0 && code < VETT_SIMBOLI_SIZE)
 			vettore_simboli [code].conteggio ++;
 		return false;
 	}
 	else
-	{ // non viene eseguito in caso di quit !!!!!!!!!!!!! (bug)
+	{ // nuova sessione
 		*numero_tasti_premuti_prec = *numero_tasti_premuti;
 		*numero_tasti_premuti = 0;
 		*tempo_inizio_sessione = time (NULL);
 		return true;
 	}
 
-	//il primo simbolo digitato inizializza il tempo_inizo_sessione sostituendo l'inizializzazione iniziale a 0 con il tempo attuale
 }
 
 // restituisce il simbolo piu' frequente dell'ultima sessione
@@ -276,11 +272,12 @@ int totCaratteri(cella_simbolo vettore_simboli[]){
 }
 
 //Aggiunge un elemento alla lista di nodo_parola,chiamando creaNodoParola per generare il nodo
-void inserisciParola (nodo_parola *testa_lista, char buffer_parola[]){
-	if (testa_lista == NULL) {
-		testa_lista = creaNodoParola (buffer_parola);
+void inserisciParola (nodo_parola **testa_lista, char buffer_parola[]){
+	if (*testa_lista == NULL) {
+		*testa_lista = creaNodoParola (buffer_parola);
+		return;
 	}
-	nodo_parola* temp = testa_lista;
+	nodo_parola* temp = *testa_lista;
 	while(temp->successiva != NULL) {
 		if (strcmp (temp->parola, buffer_parola) == 0) {
 			temp->conteggio++;
@@ -331,15 +328,9 @@ void scriviLog (FILE* file_log, time_t tempo_iniziale, cella_simbolo vettore_sim
 	fprintf (file_log, "\n============================== FINE ==============================\n");
 	fflush (file_log);
 	// infine libera la memoria allocata dalla lista, per prepararla alla prossima sessione
-	freeLista (testa_lista);
+	freeLista (&testa_lista);
 }
 
-/*long caratteriTotali (cella_simbolo vettore_simboli[]) {
-	long tot = 0;
-	for (int i = 0; i < VETT_SIMBOLI_SIZE; i++)
-		tot += vettore_simboli [i].conteggio;
-	return tot;
-}*/
 //scorre tutti i caratteri digitati ritornando il simbolo piu' premuto dopo
 char* tastoPiuPremuto (cella_simbolo vettore_simboli[]) {
 	cella_simbolo *cella_max = &vettore_simboli [0];
@@ -375,20 +366,21 @@ char* parolaPiuDigitata (nodo_parola *testa_lista) {
 }
 
 // libera la memoria allocata per la lista di parole
-void freeLista (nodo_parola* testa_lista)
+void freeLista (nodo_parola** testa_lista)
 {
-	if (testa_lista == NULL)
+	if (*testa_lista == NULL)
 		return;
 	// scorre la lista utilizzando x come variabile temporanea
-	nodo_parola *x = testa_lista;
+	nodo_parola *x = *testa_lista;
 	nodo_parola *y;
-	while (x->successiva != NULL) {
+	while (x != NULL) {
 		y = x->successiva;
 		// libera la memoria allocata per la parola, poi la memoria allocata per la struct
 		free (x->parola);
 		free (x);
 		x = y;
 	}
+	*testa_lista = NULL;
 }
 // Mappa la codifica hardware della tastiera (per il kernel linux) in stringhe leggibili
 void inizializza (cella_simbolo vettore_simboli[]) {
@@ -449,7 +441,7 @@ void inizializza (cella_simbolo vettore_simboli[]) {
 	vettore_simboli [54].simbolo = "RIGHTSHIFT";
 	vettore_simboli [55].simbolo = "KPASTERISK";
 	vettore_simboli [56].simbolo = "LEFTALT";
-	vettore_simboli [57].simbolo = "SPACE";
+	vettore_simboli [57].simbolo = " ";
 	vettore_simboli [58].simbolo = "CAPSLOCK";
 	vettore_simboli [59].simbolo = "F1";
 	vettore_simboli [60].simbolo = "F2";
